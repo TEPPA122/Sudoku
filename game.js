@@ -85,6 +85,7 @@ class GameController {
 
     this.renderBoard();
     this.drawThermometers();
+    this.updateNumberButtons();
     this.clearMessage();
 
     this.errorCountElement.textContent = '0';
@@ -171,6 +172,20 @@ class GameController {
       cell.classList.add('thermo-error');
     }
 
+    if (this.selectedCell) {
+      const isSameRow = row === this.selectedCell.row;
+      const isSameCol = col === this.selectedCell.col;
+      const isSelected = isSameRow && isSameCol;
+
+      if ((isSameRow || isSameCol) && !isSelected) {
+        cell.classList.add('highlight-cross');
+      }
+
+      if (isSelected) {
+        cell.classList.add('selected');
+      }
+    }
+
     cell.addEventListener('click', () => this.selectCell(row, col));
 
     return cell;
@@ -239,6 +254,7 @@ class GameController {
     this.errorCountElement.textContent = '0';
     this.renderBoard();
     this.drawThermometers();
+    this.updateNumberButtons();
   }
 
   selectCell(row, col) {
@@ -247,27 +263,23 @@ class GameController {
       return;
     }
 
-    if (this.selectedCell) {
-      const prevCell = document.querySelector(
-        `.sudoku-cell[data-row="${this.selectedCell.row}"][data-col="${this.selectedCell.col}"]`
-      );
-      if (prevCell) prevCell.classList.remove('selected');
-    }
-
     this.selectedCell = { row, col };
-    const cell = document.querySelector(
-      `.sudoku-cell[data-row="${row}"][data-col="${col}"]`
-    );
-    if (cell) cell.classList.add('selected');
+    this.renderBoard();
+    this.drawThermometers();
   }
 
-  inputNumber(number) {
-    if (!this.selectedCell) {
-      this.showMessage('Виберіть клітинку', 'info');
-      return;
-    }
+    inputNumber(number) {
+      if (!this.selectedCell) {
+        this.showMessage('Виберіть клітинку', 'info');
+        return;
+      }
 
-    if (this.notesMode) {
+      if (this.isNumberCompleted(number)) {
+        this.showMessage(`Усі ${number} вже знайдені`, 'info');
+        return;
+      }
+
+      if (this.notesMode) {
       this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
       this.renderBoard();
     } else {
@@ -283,6 +295,7 @@ class GameController {
         this.confirmedCells.add(cellKey);
       } else {
         this.errorCount++;
+        this.errorCountElement.textContent = this.errorCount.toString();
         if (this.errorCount >= 3) {
           this.resetCurrentPuzzle();
           this.showMessage('Ви зробили 3 помилки. Поле очищено, спробуйте ще раз.', 'error');
@@ -291,6 +304,7 @@ class GameController {
       }
       
       this.checkForErrors();
+      this.updateNumberButtons();
       this.selectCell(row, col);
       this.checkWinCondition();
     }
@@ -310,9 +324,9 @@ class GameController {
     this.sudoku.setCell(row, col, 0);
     this.clearCellNotes(row, col);
     this.checkForErrors();
+    this.updateNumberButtons();
     this.selectCell(row, col);
     this.checkWinCondition();
-    this.renderBoard();
   }
 
   clearBoard() {
@@ -325,11 +339,14 @@ class GameController {
           }
         }
       }
+      this.errorCount = 0;
       this.cellErrors.clear();
       this.thermoErrors.clear();
       this.confirmedCells.clear();
+      this.errorCountElement.textContent = '0';
       this.renderBoard();
       this.drawThermometers();
+      this.updateNumberButtons();
       this.clearMessage();
     }
   }
@@ -355,9 +372,6 @@ class GameController {
         this.thermoErrors.get(cellKey).push(thermoError.thermometerIndex);
       });
     });
-
-    const totalErrors = this.cellErrors.size + this.thermoErrors.size;
-    this.errorCountElement.textContent = totalErrors.toString();
 
     this.renderBoard();
     this.drawThermometers();
@@ -416,7 +430,7 @@ class GameController {
         line.setAttribute('stroke', strokeColor);
         line.setAttribute('stroke-width', '5');
         line.setAttribute('stroke-linecap', 'round');
-        line.setAttribute('opacity', '0.8');
+        line.setAttribute('opacity', '0.3');
 
         svg.appendChild(line);
       }
@@ -430,11 +444,38 @@ class GameController {
       circle.setAttribute('cy', startY);
       circle.setAttribute('r', '8');
       circle.setAttribute('fill', fillColor);
-      circle.setAttribute('opacity', '0.8');
+      circle.setAttribute('opacity', '0.3');
 
       svg.appendChild(circle);
     });
   }
+  isNumberCompleted(number) {
+  const board = this.sudoku.getBoard();
+  let count = 0;
+
+  for (let row = 0; row < 9; row++) {
+    for (let col = 0; col < 9; col++) {
+      if (
+        board[row][col] === number &&
+        this.sudoku.solution[row][col] === number
+      ) {
+        count++;
+      }
+    }
+  }
+
+  return count >= 9;
+}
+
+updateNumberButtons() {
+  this.numButtons.forEach(btn => {
+    const number = parseInt(btn.dataset.number);
+    const isCompleted = this.isNumberCompleted(number);
+
+    btn.disabled = isCompleted;
+    btn.classList.toggle('completed', isCompleted);
+  });
+}
 
   handleKeyboard(e) {
     if (!this.selectedCell) return;
