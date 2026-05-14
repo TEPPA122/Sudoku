@@ -80,8 +80,10 @@ main {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   position: absolute;
-  z-index: 5;
+  z-index: 15;
   pointer-events: none;
+  top: 0;
+  left: 0;
 }
 
 .sudoku-board {
@@ -107,7 +109,7 @@ main {
   font-size: 1.5rem;
   font-weight: 600;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.75);
   border: 1px solid var(--border-light);
   transition: background-color 0.15s;
   user-select: none;
@@ -126,10 +128,31 @@ main {
   font-weight: 700;
 }
 
+.sudoku-cell.confirmed {
+  background-color: #d1d5db;
+  color: #374151;
+  cursor: default;
+  font-weight: 600;
+}
+
+.sudoku-cell.confirmed:hover {
+  background-color: #d1d5db;
+}
+
+.sudoku-cell.highlight-cross {
+  background-color: rgba(191, 219, 254, 0.28);
+}
+
+.sudoku-cell.locked.highlight-cross,
+.sudoku-cell.confirmed.highlight-cross {
+  box-shadow: inset 0 0 0 9999px rgba(191, 219, 254, 0.22);
+}
+
 .sudoku-cell.selected {
-  background-color: #bfdbfe;
+  background-color: rgba(96, 165, 250, 0.42);
   border-color: var(--primary-color);
   border-width: 2px;
+  z-index: 25;
 }
 
 .sudoku-cell.error {
@@ -142,33 +165,44 @@ main {
   color: var(--error-color);
 }
 
-.sudoku-cell:nth-child(3n + 1) {
-  border-left: 2px solid var(--border-dark);
+.sudoku-cell-content {
+  position: relative;
+  z-index: 20;
 }
 
-.sudoku-cell:nth-child(3n) {
-  border-right: 2px solid var(--border-dark);
+.sudoku-cell-notes {
+  position: absolute;
+  inset: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1px;
+  z-index: 5;
 }
 
-.sudoku-cell:nth-child(-3n + 3) {
-  border-top: 2px solid var(--border-dark);
+.note-digit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  color: #9ca3af;
+  font-weight: 500;
 }
 
-.sudoku-cell:nth-child(n + 25):nth-child(-3n + 27),
-.sudoku-cell:nth-child(n + 52):nth-child(-3n + 54) {
-  border-bottom: 2px solid var(--border-dark);
+.sudoku-cell.border-top {
+  border-top: 3px solid #1f2937;
 }
 
-.sudoku-cell:nth-child(n + 19):nth-child(-3n + 21) {
-  border-bottom: 2px solid var(--border-dark);
+.sudoku-cell.border-right {
+  border-right: 3px solid #1f2937;
 }
 
-.sudoku-cell:nth-child(n + 46):nth-child(-3n + 48) {
-  border-bottom: 2px solid var(--border-dark);
+.sudoku-cell.border-bottom {
+  border-bottom: 3px solid #1f2937;
 }
 
-.sudoku-cell:nth-child(n + 73):nth-child(-3n + 75) {
-  border-bottom: 2px solid var(--border-dark);
+.sudoku-cell.border-left {
+  border-left: 3px solid #1f2937;
 }
 
 .sudoku-cell.empty {
@@ -274,11 +308,41 @@ main {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.number-buttons label {
-  display: block;
-  font-weight: 600;
+.number-buttons-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+}
+
+.number-buttons-header label {
+  font-weight: 600;
   color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.notes-toggle-btn {
+  background: transparent;
+  border: 2px solid var(--border-light);
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notes-toggle-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.notes-toggle-btn.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .buttons-grid {
@@ -309,6 +373,31 @@ main {
   background: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
+}
+
+.num-btn.completed,
+.num-btn:disabled {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+}
+
+.num-btn.completed:hover,
+.num-btn:disabled:hover {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.num-btn.completed:active,
+.num-btn:disabled:active {
+  background-color: #e5e7eb;
+  border-color: #d1d5db;
+  color: #9ca3af;
 }
 
 .clear-btn {
@@ -436,7 +525,7 @@ footer {
 
 @media (max-width: 500px) {
   .sudoku-board,
-  #boardCanvas {
+  #thermometerSvg {
     width: 100%;
     max-width: 350px;
     height: 350px;

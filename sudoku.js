@@ -109,9 +109,15 @@ class SudokuGame {
   }
 
   setCell(row, col, value) {
-    if (!this.lockedCells.has(`${row}-${col}`)) {
-      this.board[row][col] = value;
+    if (this.lockedCells.has(`${row}-${col}`)) {
+      return;
     }
+
+    if (value < 0 || value > 9 || !Number.isInteger(value)) {
+      return;
+    }
+
+    this.board[row][col] = value;
   }
 
   isLocked(row, col) {
