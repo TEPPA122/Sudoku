@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Судоку з термометрами</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Судоку з термометрами</h1>
+    </header>
+
+    <main>
+      <div class="game-area">
+        <div class="board-container">
+          <svg id="thermometerSvg" width="450" height="450"></svg>
+          <div id="sudokuBoard" class="sudoku-board"></div>
+        </div>
+
+        <div class="right-panel">
+          <div class="stats-panel">
+            <div class="stat">
+              <label>Час:</label>
+              <div id="timer" class="timer-value">00:00</div>
+            </div>
+            <div class="stat">
+              <label>Помилки:</label>
+              <div id="errorCount" class="error-value">0</div>
+            </div>
+          </div>
+
+          <div class="difficulty-panel">
+            <label>Складність:</label>
+            <div class="difficulty-buttons">
+              <button class="difficulty-btn" data-difficulty="easy">Легка</button>
+              <button class="difficulty-btn" data-difficulty="medium">Середня</button>
+              <button class="difficulty-btn" data-difficulty="hard">Складна</button>
+            </div>
+          </div>
+
+          <div class="number-buttons">
+            <label>Числа:</label>
+            <div class="buttons-grid">
+              <button class="num-btn" data-number="1">1</button>
+              <button class="num-btn" data-number="2">2</button>
+              <button class="num-btn" data-number="3">3</button>
+              <button class="num-btn" data-number="4">4</button>
+              <button class="num-btn" data-number="5">5</button>
+              <button class="num-btn" data-number="6">6</button>
+              <button class="num-btn" data-number="7">7</button>
+              <button class="num-btn" data-number="8">8</button>
+              <button class="num-btn" data-number="9">9</button>
+            </div>
+            <button class="clear-btn" id="clearCellBtn">Очистити (Delete)</button>
+          </div>
+
+          <div class="control-buttons">
+            <button id="newGameBtn" class="btn btn-primary">Нова гра</button>
+            <button id="checkBtn" class="btn btn-secondary">Перевірити</button>
+            <button id="clearBoardBtn" class="btn btn-secondary">Очистити поле</button>
+          </div>
+
+          <div id="message" class="message-area"></div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Судоку з термометрами &copy; 2026</p>
+    </footer>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
