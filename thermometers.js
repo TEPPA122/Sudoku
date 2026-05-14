@@ -5,48 +5,156 @@ class ThermometerGenerator {
     this.usedCells = new Set();
   }
 
-  generateThermometers() {
+  generateThermometers(options = {}) {
     this.thermometers = [];
     this.usedCells.clear();
 
-    const targetCount = Math.floor(Math.random() * 4) + 4;
-    let attempts = 0;
-    const maxAttempts = 500;
+    const {
+      minCount = 4,
+      maxCount = 7,
+      minLength = 4,
+      maxLength = 7,
+      requiredLongLength = 6
+    } = options;
 
-    const longThermometer = this.generateThermometerByLength(6);
-    if (longThermometer) {
-      this.addThermometer(longThermometer);
-    }
+    const targetCount = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+    const candidates = this.buildCandidatePaths(minLength, maxLength);
+    const selected = this.selectThermometerSet(candidates, targetCount, requiredLongLength);
 
-    while (this.thermometers.length < targetCount && attempts < maxAttempts) {
-      attempts++;
-      const length = Math.floor(Math.random() * 4) + 4;
-      const thermometer = this.generateThermometerByLength(length);
-      
-      if (thermometer) {
-        this.addThermometer(thermometer);
-      }
-    }
+    selected.forEach(thermometer => this.addThermometer(thermometer));
 
     return this.thermometers;
   }
 
-  generateThermometerByLength(targetLength) {
-    const maxAttempts = Math.min(200, targetLength > 5 ? 300 : 100);
-    
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const startRow = Math.floor(Math.random() * 9);
-      const startCol = Math.floor(Math.random() * 9);
-      const startKey = `${startRow}-${startCol}`;
+  buildCandidatePaths(minLength, maxLength) {
+    const candidates = [];
 
-      if (this.usedCells.has(startKey)) {
-        continue;
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        this.collectPathsFromCell(row, col, minLength, maxLength, candidates);
+      }
+    }
+
+    return this.shuffleArray(candidates);
+  }
+
+  collectPathsFromCell(row, col, minLength, maxLength, candidates) {
+    const path = [{ row, col }];
+    const visited = new Set([`${row}-${col}`]);
+
+    const extendPath = () => {
+      if (path.length >= minLength) {
+        candidates.push(path.map(cell => ({ ...cell })));
       }
 
-      const path = this.generatePath(startRow, startCol, targetLength);
+      if (path.length === maxLength) {
+        return;
+      }
 
-      if (this.isPathValid(path)) {
-        return path;
+      const current = path[path.length - 1];
+      const currentValue = this.solution[current.row][current.col];
+      const nextCells = this.getIncreasingNeighbors(current, currentValue, visited);
+
+      for (const next of nextCells) {
+        const key = `${next.row}-${next.col}`;
+        visited.add(key);
+        path.push(next);
+        extendPath();
+        path.pop();
+        visited.delete(key);
+      }
+    };
+
+    extendPath();
+  }
+
+  getIncreasingNeighbors(cell, currentValue, visited) {
+    return this.shuffleArray([
+      { row: cell.row - 1, col: cell.col },
+      { row: cell.row + 1, col: cell.col },
+      { row: cell.row, col: cell.col - 1 },
+      { row: cell.row, col: cell.col + 1 }
+    ].filter(next => {
+      const key = `${next.row}-${next.col}`;
+      return (
+        next.row >= 0 && next.row < 9 &&
+        next.col >= 0 && next.col < 9 &&
+        !visited.has(key) &&
+        this.solution[next.row][next.col] > currentValue
+      );
+    }));
+  }
+
+  selectThermometerSet(candidates, targetCount, requiredLongLength) {
+    let bestSet = [];
+    let bestScore = -1;
+    const attempts = 160;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const used = new Set();
+      const selected = [];
+      const shuffledCandidates = this.shuffleArray([...candidates]).sort((a, b) => {
+        const aLong = a.length === requiredLongLength ? 1 : 0;
+        const bLong = b.length === requiredLongLength ? 1 : 0;
+        return bLong - aLong || a.length - b.length;
+      });
+
+      for (const candidate of shuffledCandidates) {
+        if (selected.length === targetCount) {
+          break;
+        }
+
+        if (this.canUsePath(candidate, used)) {
+          selected.push(candidate);
+          candidate.forEach(cell => used.add(`${cell.row}-${cell.col}`));
+        }
+      }
+
+      const longest = Math.max(...selected.map(thermometer => thermometer.length), 0);
+      const hasRequiredLong = longest >= requiredLongLength ? 1 : 0;
+      const score = selected.length * 100 + hasRequiredLong * 10 + longest;
+
+      if (score > bestScore) {
+        bestSet = selected.map(path => path.map(cell => ({ ...cell })));
+        bestScore = score;
+      }
+
+      if (selected.length === targetCount && hasRequiredLong) {
+        break;
+      }
+    }
+
+    return bestSet;
+  }
+
+  canUsePath(path, used) {
+    return path.every(cell => !used.has(`${cell.row}-${cell.col}`));
+  }
+
+  generateThermometerByLength(targetLength, minLength = 4, maxLength = 7) {
+    const maxAttempts = targetLength > 5 ? 30 : 12;
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const starts = [];
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 9; col++) {
+          starts.push({ row, col });
+        }
+      }
+      this.shuffleArray(starts);
+
+      for (const { row, col } of starts) {
+        const startKey = `${row}-${col}`;
+
+        if (this.usedCells.has(startKey)) {
+          continue;
+        }
+
+        const path = this.generatePath(row, col, targetLength);
+
+        if (this.isPathValid(path, minLength, maxLength)) {
+          return path;
+        }
       }
     }
     return null;
@@ -56,8 +164,13 @@ class ThermometerGenerator {
     const path = [{ row: startRow, col: startCol }];
     const visited = new Set([`${startRow}-${startCol}`]);
 
-    while (path.length < targetLength) {
+    const extendPath = () => {
+      if (path.length === targetLength) {
+        return true;
+      }
+
       const current = path[path.length - 1];
+      const currentValue = this.solution[current.row][current.col];
       const directions = [
         { row: current.row - 1, col: current.col },
         { row: current.row + 1, col: current.col },
@@ -69,23 +182,46 @@ class ThermometerGenerator {
           dir.row >= 0 && dir.row < 9 &&
           dir.col >= 0 && dir.col < 9 &&
           !visited.has(key) &&
-          !this.usedCells.has(key)
+          !this.usedCells.has(key) &&
+          this.solution[dir.row][dir.col] > currentValue
         );
       });
 
-      if (directions.length === 0) break;
+      this.shuffleArray(directions);
 
-      const next = directions[Math.floor(Math.random() * directions.length)];
-      const key = `${next.row}-${next.col}`;
-      visited.add(key);
-      path.push(next);
+      for (const next of directions) {
+        const key = `${next.row}-${next.col}`;
+        visited.add(key);
+        path.push(next);
+
+        if (extendPath()) {
+          return true;
+        }
+
+        path.pop();
+        visited.delete(key);
+      }
+
+      return false;
+    };
+
+    if (!extendPath()) {
+      return null;
     }
 
     return path;
   }
 
-  isPathValid(path) {
-    if (!path || path.length < 4 || path.length > 7) {
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  isPathValid(path, minLength = 4, maxLength = 7) {
+    if (!path || path.length < minLength || path.length > maxLength) {
       return false;
     }
 

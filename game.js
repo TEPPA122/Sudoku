@@ -66,9 +66,51 @@ class GameController {
   }
 
   startNewGame() {
-    this.sudoku.createGame(this.selectedDifficulty);
-    this.thermometerGenerator = new ThermometerGenerator(this.sudoku.solution);
-    this.thermometerGenerator.generateThermometers();
+    if (this.selectedDifficulty === 'hard') {
+      const hardThermometerOptions = {
+        minCount: 7,
+        maxCount: 7,
+        minLength: 5,
+        maxLength: 7,
+        requiredLongLength: 7
+      };
+      let bestSolution = null;
+      let bestGenerator = null;
+      let bestScore = -1;
+
+      for (let attempt = 0; attempt < 25; attempt++) {
+        this.sudoku.generateSolution();
+        const generator = new ThermometerGenerator(this.sudoku.solution);
+        generator.generateThermometers(hardThermometerOptions);
+        const thermometers = generator.getThermometers();
+        const longestThermometer = Math.max(...thermometers.map(thermometer => thermometer.length), 0);
+        const score = thermometers.length * 100 + longestThermometer;
+
+        if (score > bestScore) {
+          bestSolution = this.sudoku.getSolution();
+          bestGenerator = generator;
+          bestScore = score;
+        }
+
+        if (
+          thermometers.length === hardThermometerOptions.maxCount &&
+          longestThermometer === hardThermometerOptions.requiredLongLength
+        ) {
+          break;
+        }
+      }
+
+      this.sudoku.solution = bestSolution;
+      this.thermometerGenerator = bestGenerator;
+      this.sudoku.createPuzzleWithThermometers(
+        'hard',
+        this.thermometerGenerator.getThermometers()
+      );
+    } else {
+      this.sudoku.createGame(this.selectedDifficulty);
+      this.thermometerGenerator = new ThermometerGenerator(this.sudoku.solution);
+      this.thermometerGenerator.generateThermometers();
+    }
 
     this.selectedCell = null;
     this.elapsedSeconds = 0;
@@ -268,46 +310,62 @@ class GameController {
     this.drawThermometers();
   }
 
-    inputNumber(number) {
-      if (!this.selectedCell) {
-        this.showMessage('Виберіть клітинку', 'info');
-        return;
-      }
-
-      if (this.isNumberCompleted(number)) {
-        this.showMessage(`Усі ${number} вже знайдені`, 'info');
-        return;
-      }
-
-      if (this.notesMode) {
-      this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
-      this.renderBoard();
-    } else {
-      const row = this.selectedCell.row;
-      const col = this.selectedCell.col;
-      const cellKey = `${row}-${col}`;
-      
-      this.sudoku.setCell(row, col, number);
-      this.clearCellNotes(row, col);
-      
-      const correctValue = this.sudoku.solution[row][col];
-      if (number === correctValue) {
-        this.confirmedCells.add(cellKey);
-      } else {
-        this.errorCount++;
-        this.errorCountElement.textContent = this.errorCount.toString();
-        if (this.errorCount >= 3) {
-          this.resetCurrentPuzzle();
-          this.showMessage('Ви зробили 3 помилки. Поле очищено, спробуйте ще раз.', 'error');
-          return;
-        }
-      }
-      
-      this.checkForErrors();
-      this.updateNumberButtons();
-      this.selectCell(row, col);
-      this.checkWinCondition();
+  inputNumber(number) {
+    if (!this.selectedCell) {
+      this.showMessage('Виберіть клітинку', 'info');
+      return;
     }
+
+    if (this.isNumberCompleted(number)) {
+      this.showMessage(`Усі ${number} вже знайдені`, 'info');
+      return;
+    }
+
+    const row = this.selectedCell.row;
+    const col = this.selectedCell.col;
+    const cellKey = `${row}-${col}`;
+
+    if (this.sudoku.isLocked(row, col) || this.confirmedCells.has(cellKey)) {
+      return;
+    }
+
+    if (this.notesMode) {
+      this.toggleNote(row, col, number);
+      this.renderBoard();
+      this.drawThermometers();
+      return;
+    }
+
+    const correctValue = this.sudoku.solution[row][col];
+
+    if (number !== correctValue) {
+      this.errorCount++;
+      this.errorCountElement.textContent = this.errorCount.toString();
+      this.cellErrors.add(cellKey);
+      this.renderBoard();
+      this.drawThermometers();
+      this.showMessage('Неправильне число', 'error');
+
+      if (this.errorCount >= 3) {
+        this.resetCurrentPuzzle();
+        this.showMessage('Ви зробили 3 помилки. Поле очищено, спробуйте ще раз.', 'error');
+      }
+
+      return;
+    }
+
+    this.sudoku.setCell(row, col, number);
+    this.clearCellNotes(row, col);
+    this.confirmedCells.add(cellKey);
+    this.cellErrors.delete(cellKey);
+    this.thermoErrors.delete(cellKey);
+
+    this.checkForErrors();
+    this.updateNumberButtons();
+    this.selectedCell = null;
+    this.renderBoard();
+    this.drawThermometers();
+    this.checkWinCondition();
   }
 
   clearSelectedCell() {
@@ -317,7 +375,7 @@ class GameController {
     const col = this.selectedCell.col;
     const cellKey = `${row}-${col}`;
     
-    if (this.confirmedCells.has(cellKey)) {
+    if (this.sudoku.isLocked(row, col) || this.confirmedCells.has(cellKey)) {
       return;
     }
 
