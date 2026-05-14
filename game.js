@@ -12,6 +12,11 @@ class GameController {
     this.errorCount = 0;
     this.cellErrors = new Set();
     this.thermoErrors = new Map();
+    this.notesMode = false;
+    this.confirmedCells = new Set();
+    this.notes = Array.from({ length: 9 }, () =>
+      Array.from({ length: 9 }, () => new Set())
+    );
 
     this.initializeElements();
     this.attachEventListeners();
@@ -24,18 +29,18 @@ class GameController {
     this.errorCountElement = document.getElementById('errorCount');
     this.messageElement = document.getElementById('message');
     this.newGameBtn = document.getElementById('newGameBtn');
-    this.checkBtn = document.getElementById('checkBtn');
     this.clearBoardBtn = document.getElementById('clearBoardBtn');
     this.clearCellBtn = document.getElementById('clearCellBtn');
+    this.notesToggleBtn = document.getElementById('notesToggleBtn');
     this.numButtons = document.querySelectorAll('.num-btn');
     this.difficultyButtons = document.querySelectorAll('.difficulty-btn');
   }
 
   attachEventListeners() {
     this.newGameBtn.addEventListener('click', () => this.startNewGame());
-    this.checkBtn.addEventListener('click', () => this.checkGame());
     this.clearBoardBtn.addEventListener('click', () => this.clearBoard());
     this.clearCellBtn.addEventListener('click', () => this.clearSelectedCell());
+    this.notesToggleBtn.addEventListener('click', () => this.toggleNotesMode());
 
     this.numButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -70,6 +75,10 @@ class GameController {
     this.errorCount = 0;
     this.cellErrors.clear();
     this.thermoErrors.clear();
+    this.confirmedCells.clear();
+    this.clearAllNotes();
+    this.notesMode = false;
+    this.notesToggleBtn.classList.remove('active');
 
     if (this.timerInterval) clearInterval(this.timerInterval);
     this.startTimer();
@@ -113,19 +122,43 @@ class GameController {
     cell.dataset.row = row;
     cell.dataset.col = col;
 
+    if (row === 0) cell.classList.add('border-top');
+    if (col === 0) cell.classList.add('border-left');
+    if (col === 2 || col === 5 || col === 8) cell.classList.add('border-right');
+    if (row === 2 || row === 5 || row === 8) cell.classList.add('border-bottom');
+
     const isLocked = this.sudoku.isLocked(row, col);
     const cellKey = `${row}-${col}`;
+    const isConfirmed = this.confirmedCells.has(cellKey);
 
     if (isLocked) {
       cell.classList.add('locked');
       if (value !== 0) {
-        cell.textContent = value;
+        const content = document.createElement('div');
+        content.className = 'sudoku-cell-content';
+        content.textContent = value;
+        cell.appendChild(content);
+      }
+    } else if (isConfirmed) {
+      cell.classList.add('confirmed');
+      if (value !== 0) {
+        const content = document.createElement('div');
+        content.className = 'sudoku-cell-content';
+        content.textContent = value;
+        cell.appendChild(content);
       }
     } else {
       if (value !== 0) {
-        cell.textContent = value;
+        const content = document.createElement('div');
+        content.className = 'sudoku-cell-content';
+        content.textContent = value;
+        cell.appendChild(content);
       } else {
         cell.classList.add('empty');
+        const notesContainer = this.renderNotes(row, col);
+        if (notesContainer) {
+          cell.appendChild(notesContainer);
+        }
       }
     }
 
@@ -143,8 +176,76 @@ class GameController {
     return cell;
   }
 
+  renderNotes(row, col) {
+    const noteSet = this.notes[row][col];
+    if (!noteSet || noteSet.size === 0) {
+      return null;
+    }
+
+    const notesContainer = document.createElement('div');
+    notesContainer.className = 'sudoku-cell-notes';
+
+    for (let i = 1; i <= 9; i++) {
+      const noteDiv = document.createElement('div');
+      if (noteSet.has(i)) {
+        noteDiv.className = 'note-digit';
+        noteDiv.textContent = i;
+      }
+      notesContainer.appendChild(noteDiv);
+    }
+
+    return notesContainer;
+  }
+
+  toggleNotesMode() {
+    this.notesMode = !this.notesMode;
+    this.notesToggleBtn.classList.toggle('active', this.notesMode);
+  }
+
+  toggleNote(row, col, number) {
+    const noteSet = this.notes[row][col];
+    if (noteSet.has(number)) {
+      noteSet.delete(number);
+    } else {
+      noteSet.add(number);
+    }
+  }
+
+  clearCellNotes(row, col) {
+    this.notes[row][col].clear();
+  }
+
+  clearAllNotes() {
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        this.notes[row][col].clear();
+      }
+    }
+  }
+
+  resetCurrentPuzzle() {
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (!this.sudoku.isLocked(row, col)) {
+          this.sudoku.setCell(row, col, 0);
+        }
+      }
+    }
+    this.errorCount = 0;
+    this.cellErrors.clear();
+    this.thermoErrors.clear();
+    this.confirmedCells.clear();
+    this.clearAllNotes();
+    this.errorCountElement.textContent = '0';
+    this.renderBoard();
+    this.drawThermometers();
+  }
+
   selectCell(row, col) {
-    if (this.sudoku.isLocked(row, col)) return;
+    const cellKey = `${row}-${col}`;
+    if (this.sudoku.isLocked(row, col) || this.confirmedCells.has(cellKey)) {
+      return;
+    }
 
     if (this.selectedCell) {
       const prevCell = document.querySelector(
@@ -166,19 +267,52 @@ class GameController {
       return;
     }
 
-    this.sudoku.setCell(this.selectedCell.row, this.selectedCell.col, number);
-    this.renderBoard();
-    this.selectCell(this.selectedCell.row, this.selectedCell.col);
-    this.checkForErrors();
+    if (this.notesMode) {
+      this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
+      this.renderBoard();
+    } else {
+      const row = this.selectedCell.row;
+      const col = this.selectedCell.col;
+      const cellKey = `${row}-${col}`;
+      
+      this.sudoku.setCell(row, col, number);
+      this.clearCellNotes(row, col);
+      
+      const correctValue = this.sudoku.solution[row][col];
+      if (number === correctValue) {
+        this.confirmedCells.add(cellKey);
+      } else {
+        this.errorCount++;
+        if (this.errorCount >= 3) {
+          this.resetCurrentPuzzle();
+          this.showMessage('Ви зробили 3 помилки. Поле очищено, спробуйте ще раз.', 'error');
+          return;
+        }
+      }
+      
+      this.checkForErrors();
+      this.selectCell(row, col);
+      this.checkWinCondition();
+    }
   }
 
   clearSelectedCell() {
     if (!this.selectedCell) return;
 
-    this.sudoku.setCell(this.selectedCell.row, this.selectedCell.col, 0);
-    this.renderBoard();
-    this.selectCell(this.selectedCell.row, this.selectedCell.col);
+    const row = this.selectedCell.row;
+    const col = this.selectedCell.col;
+    const cellKey = `${row}-${col}`;
+    
+    if (this.confirmedCells.has(cellKey)) {
+      return;
+    }
+
+    this.sudoku.setCell(row, col, 0);
+    this.clearCellNotes(row, col);
     this.checkForErrors();
+    this.selectCell(row, col);
+    this.checkWinCondition();
+    this.renderBoard();
   }
 
   clearBoard() {
@@ -187,11 +321,13 @@ class GameController {
         for (let col = 0; col < 9; col++) {
           if (!this.sudoku.isLocked(row, col)) {
             this.sudoku.setCell(row, col, 0);
+            this.clearCellNotes(row, col);
           }
         }
       }
       this.cellErrors.clear();
       this.thermoErrors.clear();
+      this.confirmedCells.clear();
       this.renderBoard();
       this.drawThermometers();
       this.clearMessage();
@@ -220,42 +356,39 @@ class GameController {
       });
     });
 
+    const totalErrors = this.cellErrors.size + this.thermoErrors.size;
+    this.errorCountElement.textContent = totalErrors.toString();
+
     this.renderBoard();
     this.drawThermometers();
   }
 
-  checkGame() {
+  checkWinCondition() {
     if (!this.sudoku.isComplete()) {
-      this.showMessage('Заповніть усі клітинки', 'warning');
       return;
     }
 
     this.checkForErrors();
 
-    if (this.cellErrors.size > 0) {
-      this.showMessage('Знайдено помилки в судоку', 'error');
+    if (this.cellErrors.size > 0 || this.thermoErrors.size > 0) {
       return;
     }
 
-    const thermoErrors = this.thermometerGenerator.checkAllThermometers(
-      this.sudoku.getBoard()
-    );
-
-    if (thermoErrors && thermoErrors.length > 0) {
-      this.showMessage('Знайдено помилки в термометрах', 'error');
+    if (!this.sudoku.isSolved()) {
       return;
     }
 
     clearInterval(this.timerInterval);
-    this.showMessage('🎉 Вітаємо! Ви розв\'язали судоку!', 'success');
+    this.showMessage('🎉 Вітаємо! Ви перемогли!', 'success');
   }
 
   drawThermometers() {
     const svg = document.getElementById('thermometerSvg');
     svg.innerHTML = '';
 
-    const cellSize = 50;
-    const cellRadius = 25;
+    const boardSize = this.boardElement.offsetWidth;
+    const cellSize = boardSize / 9;
+    const cellRadius = cellSize / 2;
 
     const thermometers = this.thermometerGenerator.getThermometers();
 
@@ -281,9 +414,9 @@ class GameController {
         line.setAttribute('x2', x2);
         line.setAttribute('y2', y2);
         line.setAttribute('stroke', strokeColor);
-        line.setAttribute('stroke-width', '4');
+        line.setAttribute('stroke-width', '5');
         line.setAttribute('stroke-linecap', 'round');
-        line.setAttribute('opacity', '0.85');
+        line.setAttribute('opacity', '0.8');
 
         svg.appendChild(line);
       }
@@ -295,7 +428,7 @@ class GameController {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', startX);
       circle.setAttribute('cy', startY);
-      circle.setAttribute('r', '7');
+      circle.setAttribute('r', '8');
       circle.setAttribute('fill', fillColor);
       circle.setAttribute('opacity', '0.8');
 

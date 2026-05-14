@@ -9,11 +9,25 @@ class ThermometerGenerator {
     this.thermometers = [];
     this.usedCells.clear();
 
-    const thermometerCount = Math.floor(Math.random() * 4) + 4;
+    const targetCount = Math.floor(Math.random() * 4) + 4;
+    let attempts = 0;
+    const maxAttempts = 500;
+    let hasLongThermometer = false;
 
-    for (let i = 0; i < thermometerCount; i++) {
-      const thermometer = this.generateThermometer();
-      if (thermometer && thermometer.length >= 3) {
+    while (this.thermometers.length < targetCount && attempts < maxAttempts) {
+      attempts++;
+      
+      let thermometer;
+      if (!hasLongThermometer && this.thermometers.length === 0) {
+        thermometer = this.generateLongThermometer();
+        if (thermometer) {
+          hasLongThermometer = true;
+        }
+      } else {
+        thermometer = this.generateThermometer();
+      }
+      
+      if (thermometer && thermometer.length >= 4) {
         this.thermometers.push(thermometer);
         thermometer.forEach(cell => {
           this.usedCells.add(`${cell.row}-${cell.col}`);
@@ -21,7 +35,37 @@ class ThermometerGenerator {
       }
     }
 
+    if (!hasLongThermometer && this.thermometers.length > 0) {
+      const longestIdx = this.thermometers.reduce((maxIdx, thermo, idx) => 
+        thermo.length > this.thermometers[maxIdx].length ? idx : maxIdx, 0);
+      if (this.thermometers[longestIdx].length < 6) {
+        for (let i = 0; i < 5; i++) {
+          const longThermo = this.generateLongThermometer();
+          if (longThermo) {
+            this.thermometers.push(longThermo);
+            break;
+          }
+        }
+      }
+    }
+
     return this.thermometers;
+  }
+
+  generateLongThermometer() {
+    const maxAttempts = 200;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const startRow = Math.floor(Math.random() * 9);
+      const startCol = Math.floor(Math.random() * 9);
+
+      const length = Math.floor(Math.random() * 2) + 6;
+      const path = this.generatePath(startRow, startCol, length);
+
+      if (path && path.length >= 6 && this.isValidThermometer(path)) {
+        return path;
+      }
+    }
+    return null;
   }
 
   generateThermometer() {
@@ -30,10 +74,10 @@ class ThermometerGenerator {
       const startRow = Math.floor(Math.random() * 9);
       const startCol = Math.floor(Math.random() * 9);
 
-      const length = Math.floor(Math.random() * 5) + 3;
+      const length = Math.floor(Math.random() * 4) + 4;
       const path = this.generatePath(startRow, startCol, length);
 
-      if (path && path.length >= 3 && this.isValidThermometer(path)) {
+      if (path && path.length >= 4 && this.isValidThermometer(path)) {
         return path;
       }
     }
@@ -98,8 +142,10 @@ class ThermometerGenerator {
 
       if (prevValue >= currValue) {
         errors.push({
-          cell: currCell,
-          thermometerIndex: i
+          cell: prevCell
+        });
+        errors.push({
+          cell: currCell
         });
       }
     }
