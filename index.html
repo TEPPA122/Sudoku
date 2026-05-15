@@ -1,15 +1,67 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Судоку з термометрами</title>
-  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function () {
+      var allowed = ['light', 'dark', 'neon', 'pastel'];
+      try {
+        var stored = localStorage.getItem('sudoku-theme');
+        document.documentElement.setAttribute(
+          'data-theme',
+          allowed.indexOf(stored) >= 0 ? stored : 'light'
+        );
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/themes.css">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Судоку з термометрами</h1>
+    <header class="site-header">
+      <div class="header-inner">
+        <h1 class="site-header__title">Судоку з термометрами</h1>
+        <div class="theme-switcher" role="group" aria-label="Тема оформлення">
+          <span class="theme-switcher__label" aria-hidden="true">Тема</span>
+          <button
+            type="button"
+            class="theme-swatch"
+            data-theme="light"
+            aria-label="Світла тема"
+            aria-pressed="true"
+            title="Світла"
+          ></button>
+          <button
+            type="button"
+            class="theme-swatch"
+            data-theme="dark"
+            aria-label="Темна тема"
+            aria-pressed="false"
+            title="Темна"
+          ></button>
+          <button
+            type="button"
+            class="theme-swatch"
+            data-theme="neon"
+            aria-label="Неонова тема"
+            aria-pressed="false"
+            title="Неонова"
+          ></button>
+          <button
+            type="button"
+            class="theme-swatch"
+            data-theme="pastel"
+            aria-label="Пастельна тема"
+            aria-pressed="false"
+            title="Пастельна"
+          ></button>
+        </div>
+      </div>
     </header>
 
     <main>
@@ -78,6 +130,6 @@
     </footer>
   </div>
 
-  <script type="module" src="game.js"></script>
+  <script type="module" src="js/game.js"></script>
 </body>
 </html>
