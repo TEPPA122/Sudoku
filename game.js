@@ -230,6 +230,24 @@ class GameController {
     this.notes[row][col].clear();
   }
 
+  clearNotesForDigitInRegion(number, row, col) {
+    for (let c = 0; c < 9; c++) {
+      this.notes[row][c].delete(number);
+    }
+
+    for (let r = 0; r < 9; r++) {
+      this.notes[r][col].delete(number);
+    }
+
+    const boxRow = Math.floor(row / 3) * 3;
+    const boxCol = Math.floor(col / 3) * 3;
+    for (let r = boxRow; r < boxRow + 3; r++) {
+      for (let c = boxCol; c < boxCol + 3; c++) {
+        this.notes[r][c].delete(number);
+      }
+    }
+  }
+
   clearAllNotes() {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
@@ -280,9 +298,9 @@ class GameController {
       }
 
       if (this.notesMode) {
-      this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
-      this.renderBoard();
-    } else {
+        this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
+        this.renderBoard();
+      } else {
       const row = this.selectedCell.row;
       const col = this.selectedCell.col;
       const cellKey = `${row}-${col}`;
@@ -293,6 +311,7 @@ class GameController {
       const correctValue = this.sudoku.solution[row][col];
       if (number === correctValue) {
         this.confirmedCells.add(cellKey);
+        this.clearNotesForDigitInRegion(number, row, col);
       } else {
         this.errorCount++;
         this.errorCountElement.textContent = this.errorCount.toString();
@@ -307,7 +326,7 @@ class GameController {
       this.updateNumberButtons();
       this.selectCell(row, col);
       this.checkWinCondition();
-    }
+      }
   }
 
   clearSelectedCell() {
