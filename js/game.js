@@ -1,5 +1,6 @@
 import { SudokuGame } from './sudoku.js';
 import { ThermometerGenerator } from './thermometers.js';
+import { applyTheme, initTheme } from './themes.js';
 
 class GameController {
   constructor() {
@@ -19,6 +20,7 @@ class GameController {
     );
 
     this.initializeElements();
+    this.initThemes();
     this.attachEventListeners();
     this.startNewGame();
   }
@@ -34,6 +36,34 @@ class GameController {
     this.notesToggleBtn = document.getElementById('notesToggleBtn');
     this.numButtons = document.querySelectorAll('.num-btn');
     this.difficultyButtons = document.querySelectorAll('.difficulty-btn');
+    this.themeButtons = document.querySelectorAll('.theme-swatch');
+  }
+
+  initThemes() {
+    this.currentTheme = initTheme();
+    this.syncThemeButtons();
+  }
+
+  setTheme(theme) {
+    this.currentTheme = applyTheme(theme);
+    this.syncThemeButtons();
+    if (this.thermometerGenerator) {
+      this.drawThermometers();
+    }
+  }
+
+  syncThemeButtons() {
+    this.themeButtons.forEach((btn) => {
+      const isActive = btn.dataset.theme === this.currentTheme;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+  }
+
+  getThemeCSSValue(variableName) {
+    return getComputedStyle(document.documentElement)
+      .getPropertyValue(variableName)
+      .trim();
   }
 
   attachEventListeners() {
@@ -52,6 +82,12 @@ class GameController {
     this.difficultyButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.setDifficulty(e.target.dataset.difficulty);
+      });
+    });
+
+    this.themeButtons.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        this.setTheme(e.currentTarget.dataset.theme);
       });
     });
 
@@ -464,8 +500,11 @@ class GameController {
       const isErrorThermo = Array.from(this.thermoErrors.values())
         .some(errors => errors.includes(thermoIndex));
 
-      const strokeColor = isErrorThermo ? '#ef4444' : '#646464';
-      const fillColor = isErrorThermo ? '#ef4444' : '#646464';
+      const errorColor = this.getThemeCSSValue('--error-color');
+      const thermoColor = this.getThemeCSSValue('--thermometer-color');
+      const thermoOpacity = this.getThemeCSSValue('--thermometer-opacity') || '0.3';
+      const strokeColor = isErrorThermo ? errorColor : thermoColor;
+      const fillColor = strokeColor;
 
       for (let i = 0; i < thermometer.length - 1; i++) {
         const currentCell = thermometer[i];
@@ -484,7 +523,7 @@ class GameController {
         line.setAttribute('stroke', strokeColor);
         line.setAttribute('stroke-width', '5');
         line.setAttribute('stroke-linecap', 'round');
-        line.setAttribute('opacity', '0.3');
+        line.setAttribute('opacity', thermoOpacity);
 
         svg.appendChild(line);
       }
@@ -498,7 +537,7 @@ class GameController {
       circle.setAttribute('cy', startY);
       circle.setAttribute('r', '8');
       circle.setAttribute('fill', fillColor);
-      circle.setAttribute('opacity', '0.3');
+      circle.setAttribute('opacity', thermoOpacity);
 
       svg.appendChild(circle);
     });
@@ -588,6 +627,6 @@ updateNumberButtons() {
 document.addEventListener('DOMContentLoaded', () => {
   const game = new GameController();
   window.gameController = game;
-  const easyBtn = document.querySelector('[data-difficulty="medium"]');
-  if (easyBtn) easyBtn.click();
+  const mediumBtn = document.querySelector('[data-difficulty="medium"]');
+  if (mediumBtn) mediumBtn.click();
 });

@@ -1,0 +1,185 @@
+/*
+  Design tokens per theme — each palette uses one hue family
+  (page → surface → accent → text → board → semantic)
+*/
+
+:root,
+[data-theme='light'] {
+  /* Indigo-slate — calm, readable daylight */
+  --primary-color: #5c6bc0;
+  --primary-dark: #4a5a9e;
+  --secondary-color: #7b8494;
+  --success-color: #3d8a6e;
+  --error-color: #c25b5b;
+  --warning-color: #b8863a;
+  --bg-light: #eceef2;
+  --bg-white: #f7f8fa;
+  --border-light: #d8dce3;
+  --border-dark: #a8b0bd;
+  --text-primary: #2a3140;
+  --text-secondary: #646d7e;
+  --cell-bg-playable: rgba(255, 255, 255, 0.82);
+  --cell-bg-locked: #e4e7ed;
+  --cell-bg-selected: #dde2f0;
+  --cell-confirmed-bg: #cfd5e3;
+  --cell-confirmed-text: #3d4658;
+  --cell-error: #f5e4e4;
+  --cell-thermo-error: #f5e8e8;
+  --highlight-cross: rgba(92, 107, 192, 0.14);
+  --highlight-cross-inset: rgba(92, 107, 192, 0.1);
+  --cell-selected-bg: rgba(92, 107, 192, 0.22);
+  --grid-border: #3d4658;
+  --note-color: #9099a8;
+  --num-btn-disabled-bg: #e8ebf0;
+  --num-btn-disabled-border: #d4d9e2;
+  --num-btn-disabled-text: #9aa3b2;
+  --thermometer-color: #7a8494;
+  --thermometer-opacity: 0.38;
+  --board-shadow: 0 4px 20px rgba(42, 49, 64, 0.1);
+  --panel-shadow: 0 2px 10px rgba(42, 49, 64, 0.06);
+  --header-shadow: 0 2px 10px rgba(74, 90, 158, 0.2);
+  --btn-primary-shadow: 0 4px 14px rgba(92, 107, 192, 0.22);
+  --message-success-bg: #e6f2ec;
+  --message-error-bg: #f8ecec;
+  --message-warning-bg: #f5f0e6;
+  --message-info-bg: #e8ecf5;
+  --footer-bg: #4a5568;
+  --footer-text: #eef0f4;
+  --laser-warning-color: #b8863a;
+  --laser-active-color: #c25b5b;
+}
+
+[data-theme='dark'] {
+  /* Deep blue-gray — soft accent, no harsh electric blue */
+  --primary-color: #7a94c4;
+  --primary-dark: #4a628f;
+  --secondary-color: #8b939f;
+  --success-color: #5daa88;
+  --error-color: #d48484;
+  --warning-color: #c9a55e;
+  --bg-light: #12151a;
+  --bg-white: #1a1f27;
+  --border-light: #2c3340;
+  --border-dark: #4a5362;
+  --text-primary: #e8ebf0;
+  --text-secondary: #9aa3b0;
+  --cell-bg-playable: rgba(26, 31, 39, 0.94);
+  --cell-bg-locked: #252b36;
+  --cell-bg-selected: #2a3344;
+  --cell-confirmed-bg: #323a48;
+  --cell-confirmed-text: #d8dde6;
+  --cell-error: #3a2828;
+  --cell-thermo-error: #3a2c2c;
+  --highlight-cross: rgba(122, 148, 196, 0.12);
+  --highlight-cross-inset: rgba(122, 148, 196, 0.1);
+  --cell-selected-bg: rgba(122, 148, 196, 0.2);
+  --grid-border: #9aa3b0;
+  --note-color: #6e7888;
+  --num-btn-disabled-bg: #252b36;
+  --num-btn-disabled-border: #353d4a;
+  --num-btn-disabled-text: #6e7888;
+  --thermometer-color: #7d8796;
+  --thermometer-opacity: 0.42;
+  --board-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  --panel-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  --header-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  --btn-primary-shadow: 0 4px 14px rgba(74, 98, 143, 0.3);
+  --message-success-bg: #1a2e26;
+  --message-error-bg: #2e2222;
+  --message-warning-bg: #2a261c;
+  --message-info-bg: #222a38;
+  --footer-bg: #0e1116;
+  --footer-text: #8b939f;
+  --laser-warning-color: #c9a55e;
+  --laser-active-color: #d48484;
+}
+
+[data-theme='neon'] {
+  /* Night teal — clearly different from blue-gray dark theme */
+  --primary-color: #4ecdc4;
+  --primary-dark: #2a8a82;
+  --secondary-color: #7a8f94;
+  --success-color: #6bc9a8;
+  --error-color: #e07a8a;
+  --warning-color: #d4b86a;
+  --bg-light: #081210;
+  --bg-white: #101c1a;
+  --border-light: #1e3532;
+  --border-dark: #3d6a64;
+  --text-primary: #e8f4f2;
+  --text-secondary: #8ab4ae;
+  --cell-bg-playable: rgba(16, 28, 26, 0.96);
+  --cell-bg-locked: #142422;
+  --cell-bg-selected: #1a3834;
+  --cell-confirmed-bg: #1e4038;
+  --cell-confirmed-text: #c8e8e4;
+  --cell-error: #3a2228;
+  --cell-thermo-error: #3a2428;
+  --highlight-cross: rgba(78, 205, 196, 0.14);
+  --highlight-cross-inset: rgba(78, 205, 196, 0.1);
+  --cell-selected-bg: rgba(78, 205, 196, 0.24);
+  --grid-border: #4ecdc4;
+  --note-color: #5a8a84;
+  --num-btn-disabled-bg: #142422;
+  --num-btn-disabled-border: #1e3532;
+  --num-btn-disabled-text: #4a6a66;
+  --thermometer-color: #5ab8b0;
+  --thermometer-opacity: 0.5;
+  --board-shadow: 0 4px 32px rgba(78, 205, 196, 0.12);
+  --panel-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+  --header-shadow: 0 2px 20px rgba(78, 205, 196, 0.22);
+  --btn-primary-shadow: 0 4px 18px rgba(78, 205, 196, 0.28);
+  --message-success-bg: #1a2824;
+  --message-error-bg: #2a2024;
+  --message-warning-bg: #28241c;
+  --message-info-bg: #1c2628;
+  --footer-bg: #0a0c10;
+  --footer-text: #6e8a86;
+  --laser-warning-color: #c9b06a;
+  --laser-active-color: #d48a9a;
+}
+
+[data-theme='pastel'] {
+  /* Warm cream + dusty mauve — soft, cohesive pastels */
+  --primary-color: #8a7a9e;
+  --primary-dark: #6f627f;
+  --secondary-color: #9a9088;
+  --success-color: #6a9e86;
+  --error-color: #c48a8a;
+  --warning-color: #b89a6a;
+  --bg-light: #f5f1ec;
+  --bg-white: #faf7f3;
+  --border-light: #e5ddd4;
+  --border-dark: #c9bfb4;
+  --text-primary: #3f3a36;
+  --text-secondary: #8a8278;
+  --cell-bg-playable: rgba(255, 252, 248, 0.9);
+  --cell-bg-locked: #efe9e2;
+  --cell-bg-selected: #ebe4f0;
+  --cell-confirmed-bg: #e0d8e8;
+  --cell-confirmed-text: #5a5060;
+  --cell-error: #f5e8e6;
+  --cell-thermo-error: #f5ebe8;
+  --highlight-cross: rgba(138, 122, 158, 0.16);
+  --highlight-cross-inset: rgba(138, 122, 158, 0.12);
+  --cell-selected-bg: rgba(138, 122, 158, 0.2);
+  --grid-border: #8a7e92;
+  --note-color: #a89ca8;
+  --num-btn-disabled-bg: #efe9e2;
+  --num-btn-disabled-border: #e0d8d0;
+  --num-btn-disabled-text: #b0a8a0;
+  --thermometer-color: #a094a8;
+  --thermometer-opacity: 0.4;
+  --board-shadow: 0 4px 18px rgba(79, 70, 60, 0.08);
+  --panel-shadow: 0 2px 10px rgba(79, 70, 60, 0.06);
+  --header-shadow: 0 2px 12px rgba(111, 98, 127, 0.15);
+  --btn-primary-shadow: 0 4px 14px rgba(138, 122, 158, 0.18);
+  --message-success-bg: #e8f0ec;
+  --message-error-bg: #f5ecec;
+  --message-warning-bg: #f5f0e8;
+  --message-info-bg: #ede8f2;
+  --footer-bg: #6f627f;
+  --footer-text: #f5f1ec;
+  --laser-warning-color: #b89a6a;
+  --laser-active-color: #c48a8a;
+}
