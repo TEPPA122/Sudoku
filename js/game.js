@@ -119,6 +119,7 @@ class GameController {
     if (this.timerInterval) clearInterval(this.timerInterval);
     this.startTimer();
 
+    this.refreshNotesElimination();
     this.renderBoard();
     this.drawThermometers();
     this.updateNumberButtons();
@@ -266,6 +267,55 @@ class GameController {
     this.notes[row][col].clear();
   }
 
+  clearNotesForDigitInRegion(number, row, col) {
+    for (let c = 0; c < 9; c++) {
+      this.notes[row][c].delete(number);
+    }
+
+    for (let r = 0; r < 9; r++) {
+      this.notes[r][col].delete(number);
+    }
+
+    const boxRow = Math.floor(row / 3) * 3;
+    const boxCol = Math.floor(col / 3) * 3;
+    for (let r = boxRow; r < boxRow + 3; r++) {
+      for (let c = boxCol; c < boxCol + 3; c++) {
+        this.notes[r][c].delete(number);
+      }
+    }
+  }
+
+  purgeDigitFromAllNotes(digit) {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        this.notes[r][c].delete(digit);
+      }
+    }
+  }
+
+  refreshNotesElimination() {
+    for (let r = 0; r < 9; r++) {
+      for (let c = 0; c < 9; c++) {
+        const value = this.sudoku.getBoard()[r][c];
+        if (value === 0) continue;
+
+        const cellKey = `${r}-${c}`;
+        const isDefinitive =
+          this.sudoku.isLocked(r, c) || this.confirmedCells.has(cellKey);
+
+        if (isDefinitive && value === this.sudoku.solution[r][c]) {
+          this.clearNotesForDigitInRegion(value, r, c);
+        }
+      }
+    }
+
+    for (let digit = 1; digit <= 9; digit++) {
+      if (this.isNumberCompleted(digit)) {
+        this.purgeDigitFromAllNotes(digit);
+      }
+    }
+  }
+
   clearAllNotes() {
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
@@ -287,6 +337,7 @@ class GameController {
     this.thermoErrors.clear();
     this.confirmedCells.clear();
     this.clearAllNotes();
+    this.refreshNotesElimination();
     this.errorCountElement.textContent = '0';
     this.renderBoard();
     this.drawThermometers();
@@ -316,16 +367,18 @@ class GameController {
       }
 
       if (this.notesMode) {
-      this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
-      this.renderBoard();
-    } else {
+        this.toggleNote(this.selectedCell.row, this.selectedCell.col, number);
+        this.refreshNotesElimination();
+        this.renderBoard();
+      } else {
       const row = this.selectedCell.row;
       const col = this.selectedCell.col;
       const cellKey = `${row}-${col}`;
-      
+
       this.sudoku.setCell(row, col, number);
       this.clearCellNotes(row, col);
-      
+      this.clearNotesForDigitInRegion(number, row, col);
+
       const correctValue = this.sudoku.solution[row][col];
       if (number === correctValue) {
         this.confirmedCells.add(cellKey);
@@ -338,12 +391,13 @@ class GameController {
           return;
         }
       }
-      
+
+      this.refreshNotesElimination();
       this.checkForErrors();
       this.updateNumberButtons();
       this.selectCell(row, col);
       this.checkWinCondition();
-    }
+      }
   }
 
   clearSelectedCell() {
